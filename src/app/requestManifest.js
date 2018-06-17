@@ -1,7 +1,7 @@
-import axios from 'axios';
-import lodash from 'lodash';
+const axios = require('axios');
+//import lodash from 'lodash';
 
-module.exports = (url, callback) {
+export default function (url, callback) {
 
    let dataReq = () => { return {}; };
 
