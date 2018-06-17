@@ -1,40 +1,48 @@
 const axios = require('axios');
-//import lodash from 'lodash';
+const Promise = require('promise');
 
-export default function (url, callback) {
+export default function (url) {
 
-   let dataReq = () => { return {}; };
+   return new Promise( (resolve, reject) => {
+      let manifest = {};
 
-   axios.get(url)
-      .then( (response) => {
+      axios.get(url)
+         .then( (res) => {
 
-         dataReq.hasError = false;
-         dataReq.data     = response.data;
-         dataReq.status   = response.status;
+            manifest = {
+               hasError: false,
+               data    : res.data,
+               status  : res.status,
+               message : '',
+               renditions : 0,
+               origin     : url
+            };
 
-         return callback ( null, dataReq);
+            return resolve(manifest);
 
-      })
-      .catch( (error) => {
+         })
+         .catch( (error) => {
 
-         dataReq.hasError = true;
+            manifest.hasError = true;
+            manifest.data   = '';
+            manifest.status = '';
+            manifest.renditions = 0;
+            manifest.origin   = url;
 
-         if (error.response) {
-            dataReq.data    = error.response.data;
-            dataReq.status  = error.response.status;
-            dataReq.message = 'An unexpected error occured';
-         } else if ( error.request ) {
-            dataReq.data   = '';
-            dataReq.status = '';
-            dataReq.message = 'The request was made but no response was received';
-         } else {
-            dataReq.data   = '';
-            dataReq.status = '';
-            dataReq.message = error.message;
-         }
+            if (error.response) {
+               manifest.data    = error.response.data;
+               manifest.status  = error.response.status;
+               manifest.message = 'An unexpected error occured';
+            } else if ( error.request ) {
+               manifest.message = 'The request was made but no response was received';
+            } else {
+               manifest.message = error.message;
+            }
 
-         return callback ( null, dataReq );
+            return reject(manifest);
 
-      });
+         });
+
+   });
 
 }
