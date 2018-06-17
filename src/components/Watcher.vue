@@ -6,9 +6,15 @@
             .col.p-1
                .card.bg-light
                   .card-header.h7.p-2 Stats
-                  .card-body.p-2
-                     p Status: {{ status }}
-                     p Renditions: {{ renditions }}
+                  ul.list-group.list-group-flush
+                     li.list-group-item.p-2 Status:
+                        strong  {{ status }}
+                     li.list-group-item.p-2 Renditions:
+                        strong  {{ renditions }}
+                     li.list-group-item.p-2 Requests:
+                        strong  {{ requests }}
+                     li.list-group-item.p-2 Interval(ms):
+                        strong  {{ intervalMs }}
             .col.p-1
                .card.bg-light
                   .card-header.h7.p-2 Chunks
@@ -34,7 +40,9 @@
             isRunning:false,
             toggleButton: 'Start',
             status: 0,
-            renditions: 0
+            renditions: 0,
+            requests: 0,
+            intervalMs: 5000
          }
       },
       methods: {
@@ -45,8 +53,9 @@
                   getDataUpdate(this.watcher.url, (err, data) => {
                      this.status = data.stats.status;
                      this.renditions = data.stats.renditions.length;
+                     this.requests += 1;
                   });
-               }, 5000);
+               }, this.intervalMs);
                this.interval = intervalObj;
             } else if (this.isRunning) {
                clearInterval(this.interval);

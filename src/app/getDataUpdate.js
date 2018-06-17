@@ -21,6 +21,7 @@ export default function (url, callback) {
 
       data.stats.status     = manifest.status;
       data.stats.renditions = getRenditions(manifest);
+      data.stats.chunks     = getChunks(data.stats.renditions);
 
       return callback(null, data);
    });
@@ -41,4 +42,12 @@ function getRenditions (manifest) {
 
    return renditions;
 
+}
+
+////////////////////////////////
+
+function getChunks (rendition) {
+
+
+    return rendition;
 }
