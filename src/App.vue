@@ -17,14 +17,13 @@
    import Navbar from './components/Navbar.vue';
    import InputWatcher from './components/InputWatcher.vue';
    import Watcher from './components/Watcher.vue';
+   import manifest from './app/manifest.js';
 
    export default {
       name: 'app',
       data: () => {
          return {
-            watchers:[
-               { url: 'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8' }
-            ]
+            watchers:[]
          }
       },
       components: {
@@ -38,7 +37,7 @@
             this.watchers.splice(watcherIndex, 1);
          },
          addWatcher: function (url) {
-            this.watchers.push({url:url});
+            this.watchers.push(manifest(url));
          }
       }
    }
