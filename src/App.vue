@@ -1,44 +1,24 @@
 <template lang="pug">
    #app
-      navbar
-      .container-fluid.mt-4
-         input-watcher(
-            v-on:add-watcher="addWatcher" )
-         #watcher-list
-            watcher(
-               v-for="(watcher,index) in watchers"
-               :key="index"
-               v-bind:watcher="watcher"
-               v-on:remove-watcher="removeWatcher" )
+      .container.mt-4
+         autocurl( v-bind:m3u8="m3u8" )
+         autocurl( v-bind:m3u8="m3u8_2" )
 </template>
 
 <script>
 
-   import Navbar from './components/Navbar.vue';
-   import InputWatcher from './components/InputWatcher.vue';
-   import Watcher from './components/Watcher.vue';
-   import manifest from './app/manifest.js';
+   import Autocurl from './components/autocurl/Autocurl.vue';
 
    export default {
       name: 'app',
       data: () => {
          return {
-            watchers:[]
+            m3u8:'https://rbmn-live.akamaized.net/hls/live/590971/180712Goodwood1Pri/master.m3u8',
+            m3u8_2:'https://liveredbulltv02-i.akamaihd.net/hls/live/573017/171014IronmanPri/master.m3u8'
          }
       },
       components: {
-         Navbar,
-         InputWatcher,
-         Watcher
-      },
-      methods: {
-         removeWatcher: function (watcher) {
-            const watcherIndex = this.watchers.indexOf(watcher);
-            this.watchers.splice(watcherIndex, 1);
-         },
-         addWatcher: function (url) {
-            this.watchers.push(manifest(url));
-         }
+         Autocurl
       }
    }
 

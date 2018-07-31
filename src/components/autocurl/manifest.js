@@ -3,6 +3,7 @@ const async   = require('async')
 const url     = require('url');
 const _       = require('lodash');
 const Promise = require('promise');
+const log     = (str) => { console.log('AUTOCURL DEBUG: ' + str); }
 
 /*
 *
@@ -20,7 +21,7 @@ export default function (str) {
 
     // CONFIG
     manifestUrl: manifestUrl,
-    debug: false,
+    debug: true,
     keepErrors: false,
     name: '',
 
@@ -28,7 +29,8 @@ export default function (str) {
     status: 0,
     statusText: '',
     data: '',
-
+    processTime: 0,
+    timestamp: 0,
     isMaster: 'notset',
 
     // SET AND CONFIG
@@ -45,10 +47,10 @@ export default function (str) {
     newError: newError,
 
     checks: {
-      firstChunk: false,
-      lastChunk: false,
-      chunkOrder: false,
-      chunkCount: false
+      firstChunk: {value:false, name:'First Chunks'},
+      lastChunk: {value:false, name:'Last Chunks'},
+      chunkOrder: {value:false, name:'Sequence'},
+      chunkCount: {value:false, name:'Equal Count'}
     },
 
     // ASYNCH METHODS
@@ -100,32 +102,39 @@ function setErrorKeeping (bool) {
 //////////////////////////////////////////////////
 
 function refreshData() {
-  if ( this.manifestUrl == '' ) { return }
+   if ( this.manifestUrl == '' ) { return }
+   if ( this.debug ) { log('refreshData() started.') }
 
-  return new Promise( (resolve) => {
+   return new Promise( (resolve) => {
 
-    if ( !this.keepErrors ) { this.errors = []; }
+      if ( !this.keepErrors ) { this.errors = []; }
 
-    curl(this)
-      .then( analyzeType )
-      .then( setRenditions )
-      .then( curlRenditions )
-      .then( cleanRenditions )
-      .then((obj) => {
+         this.processTime = _.now();
 
-        async.parallel([
-          function (callback) { obj.checkFirstChunks(); callback(null); },
-          function (callback) { obj.checkLastChunks(); callback(null); },
-          function (callback) { obj.checkChunkOrder(); callback(null); },
-          function (callback) { obj.checkChunkCount(); callback(null); }
-        ], () => {
+         curl(this)
+           .then( analyzeType )
+           .then( setRenditions )
+           .then( curlRenditions )
+           .then( cleanRenditions )
+           .then((obj) => {
 
-          resolve(obj);
-        });
+             if ( obj.debug ) { log('Prerequisities done') }
+             async.parallel([
+               function (callback) { obj.checkFirstChunks(); callback(null); },
+               function (callback) { obj.checkLastChunks(); callback(null); },
+               function (callback) { obj.checkChunkOrder(); callback(null); },
+               function (callback) { obj.checkChunkCount(); callback(null); }
+             ], () => {
 
-      });
+               this.processTime = _.now() - this.processTime;
+               this.timestamp   = new Date().toLocaleTimeString();
+               if ( this.debug ) { log('refreshData() end.') }
+               resolve(obj);
+             });
 
-  });
+           });
+
+   });
 
 }
 
@@ -153,6 +162,7 @@ function curl (obj) {
           obj.status     = 0 ;
           obj.statusText = error.message;
         }
+        if ( obj.debug ) { log('curl done.') }
         return resolve(obj);
       });
 
@@ -166,6 +176,7 @@ function analyzeType(obj) {
       obj.isMaster = isMaster(obj.data) ? true : false;
     }
 
+    if ( obj.debug ) { log('analyze type done.') }
     return resolve(obj);
 
   });
@@ -181,11 +192,13 @@ function setRenditions(obj) {
         return new renditionObject(url, index);
       });
 
+      if ( obj.debug ) { log('set renditions done.') }
       return resolve(obj);
 
     } else {
 
       obj.renditions = [ new renditionObject(obj.manifestUrl.href, 0) ];
+      if ( obj.debug ) { log('set renditions done.') }
       return resolve(obj);
 
     }
@@ -223,9 +236,8 @@ function curlRenditions(obj) {
 
       },
       function() {
-
-        return resolve(obj)  ;
-
+         if ( obj.debug ) { log('curl renditions done.') }
+         return resolve(obj);
     });
 
   });
@@ -244,6 +256,7 @@ function cleanRenditions(obj) {
 
     });
 
+    if ( obj.debug ) { log('clean renditions done') }
     resolve(obj);
 
   });
@@ -254,8 +267,6 @@ function cleanRenditions(obj) {
 
 function checkFirstChunks (callback) {
 
-
-
   const regex = /\d*(?=.ts)/g;
 
   _.each(this.renditions, function(r) {
@@ -263,9 +274,10 @@ function checkFirstChunks (callback) {
   });
 
   let test = !!this.renditions.reduce(function(a, b){ return (a.first == b.first) ? a : NaN; });
-  this.checks.firstChunk = test ? true : false;
+  this.checks.firstChunk.value = test ? true : false;
   !test && this.newError('At least 1 rendition has a different first chunk than all others.');
 
+  if ( this.debug ) { log('check first chunks done.') }
   if (callback) { return callback(null)}
   return this;
 
@@ -280,9 +292,10 @@ function checkLastChunks (callback) {
   });
 
   let test = !!this.renditions.reduce(function(a, b){ return (a.last == b.last) ? a : NaN; });
-  this.checks.lastChunk = test ? true : false;
+  this.checks.lastChunk.value = test ? true : false;
   !test && this.newError('At least 1 rendition has a different last chunk than all others.');
 
+  if ( this.debug ) { log('check last chunks done.') }
   if (callback) { return callback(null)}
   return this;
 
@@ -294,7 +307,7 @@ function checkChunkOrder (callback) {
   const regex = /\d*(?=.ts)/g;
   let tests = [];
 
-  this.checks.chunkOrder = true;
+  this.checks.chunkOrder.value = true;
 
   _.each(this.renditions, function (r, index) {
       let sequence = r.chunks.map((c) => { return c.match(regex)[0]})
@@ -305,11 +318,12 @@ function checkChunkOrder (callback) {
 
   for (let i = 0; i < tests.length; i++) {
     if (!tests[i].chunksInOrder) {
-      this.checks.chunkOrder = false;
+      this.checks.chunkOrder.value = false;
       this.newError('Program ['+tests[i].program+'] has an error in sequence.');
     }
   }
 
+  if ( this.debug ) { log('check chunk order done.') }
   if (callback) { return callback(null)}
   return this;
 
@@ -318,9 +332,10 @@ function checkChunkOrder (callback) {
 function checkChunkCount (callback) {
 
   let test = !!this.renditions.reduce(function(a, b){ return (a.count == b.count) ? a : NaN; });
-  this.checks.chunkCount = test ? true : false;
+  this.checks.chunkCount.value = test ? true : false;
   !test && this.newError('At least 1 rendition has a different amount of chunks than all others.');
 
+  if ( this.debug ) { log('check chunk count done.') }
   if (callback) { return callback(null)}
   return this;
 
@@ -340,12 +355,6 @@ function isMaster(data) {
   return rows[0] === 'm3u8' ? true : false;
 
 }
-/*
-function lastPartOfUrl (url) {
-
-  return url.substr(url.lastIndexOf('/') + 1);
-
-}*/
 
 function renditionObject (url, index) {
 
