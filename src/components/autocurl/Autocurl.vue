@@ -24,7 +24,7 @@
                   :key="index"
                   v-bind:class="[check.value ? 'btn-success' : 'btn-danger']" disabled)
                   span.mr-2 {{ check.name }}
-                  span.badge.badge-light.mr-1 {{ check.value }}
+                  span.badge.badge-light.mr-1 {{ check.value ? 'OK' : 'NOT OK' }}
       .card-footer
          span.badge.badge-pill.badge-secondary.mr-1.p-2
             | Time : {{ processTime }} ms
