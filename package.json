@@ -13,7 +13,7 @@
     "lodash": "^4.17.10",
     "node-sass": "^4.9.0",
     "promise": "^8.0.1",
-    "pug": "^2.0.3",
+    "pug": "^3.0.1",
     "pug-plain-loader": "^1.0.0",
     "sass-loader": "^7.0.3",
     "vue": "^2.5.16"
